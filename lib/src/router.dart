@@ -11,7 +11,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fluro/fluro.dart';
-import 'package:fluro/src/common.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,11 +22,11 @@ class Router {
   final RouteTree _routeTree = RouteTree();
 
   /// Generic handler for when a route has not been defined
-  Handler notFoundHandler;
+  Handler? notFoundHandler;
 
   /// Creates a [PageRoute] definition for the passed [RouteHandler]. You can optionally provide a default transition type.
   void define(String routePath,
-      {@required Handler handler, TransitionType transitionType}) {
+      {required Handler? handler, TransitionType? transitionType}) {
     _routeTree.addRoute(
       AppRoute(routePath, handler, transitionType: transitionType),
     );
@@ -35,24 +34,24 @@ class Router {
 
   /// Finds a defined [AppRoute] for the path value. If no [AppRoute] definition was found
   /// then function will return null.
-  AppRouteMatch match(String path) {
+  AppRouteMatch? match(String path) {
     return _routeTree.matchRoute(path);
   }
 
-  void pop(BuildContext context)  => Navigator.of(context).pop();
+  void pop(BuildContext context) => Navigator.of(context).pop();
 
   ///
   Future navigateTo(BuildContext context, String path,
       {bool replace = false,
       bool clearStack = false,
-      TransitionType transition,
+      TransitionType? transition,
       Duration transitionDuration = const Duration(milliseconds: 250),
-      RouteTransitionsBuilder transitionBuilder}) {
+      RouteTransitionsBuilder? transitionBuilder}) {
     RouteMatch routeMatch = matchRoute(context, path,
         transitionType: transition,
         transitionsBuilder: transitionBuilder,
         transitionDuration: transitionDuration);
-    Route<dynamic> route = routeMatch.route;
+    Route<dynamic>? route = routeMatch.route;
     Completer completer = Completer();
     Future future = completer.future;
     if (routeMatch.matchType == RouteMatchType.nonVisual) {
@@ -84,29 +83,29 @@ class Router {
   ///
   Route<Null> _notFoundRoute(BuildContext context, String path) {
     RouteCreator<Null> creator =
-        (RouteSettings routeSettings, Map<String, List<String>> parameters) {
+        (RouteSettings? routeSettings, Map<String, List<String>>? parameters) {
       return MaterialPageRoute<Null>(
           settings: routeSettings,
           builder: (BuildContext context) {
-            return notFoundHandler.handlerFunc(context, parameters);
+            return notFoundHandler!.handlerFunc!(context, parameters);
           });
     };
     return creator(RouteSettings(name: path), null);
   }
 
   ///
-  RouteMatch matchRoute(BuildContext buildContext, String path,
-      {RouteSettings routeSettings,
-      TransitionType transitionType,
+  RouteMatch matchRoute(BuildContext? buildContext, String path,
+      {RouteSettings? routeSettings,
+      TransitionType? transitionType,
       Duration transitionDuration = const Duration(milliseconds: 250),
-      RouteTransitionsBuilder transitionsBuilder}) {
-    RouteSettings settingsToUse = routeSettings;
+      RouteTransitionsBuilder? transitionsBuilder}) {
+    RouteSettings? settingsToUse = routeSettings;
     if (routeSettings == null) {
       settingsToUse = RouteSettings(name: path);
     }
-    AppRouteMatch match = _routeTree.matchRoute(path);
-    AppRoute route = match?.route;
-    Handler handler = (route != null ? route.handler : notFoundHandler);
+    AppRouteMatch? match = _routeTree.matchRoute(path);
+    AppRoute? route = match?.route;
+    Handler? handler = (route != null ? route.handler : notFoundHandler);
     var transition = transitionType;
     if (transitionType == null) {
       transition = route != null ? route.transitionType : TransitionType.native;
@@ -118,13 +117,13 @@ class Router {
     }
     Map<String, List<String>> parameters =
         match?.parameters ?? <String, List<String>>{};
-    if (handler.type == HandlerType.function) {
-      handler.handlerFunc(buildContext, parameters);
+    if (handler!.type == HandlerType.function) {
+      handler.handlerFunc!(buildContext, parameters);
       return RouteMatch(matchType: RouteMatchType.nonVisual);
     }
 
     RouteCreator creator =
-        (RouteSettings routeSettings, Map<String, List<String>> parameters) {
+        (RouteSettings? routeSettings, Map<String, List<String>>? parameters) {
       bool isNativeTransition = (transition == TransitionType.native ||
           transition == TransitionType.nativeModal);
       if (!kIsWeb && isNativeTransition) {
@@ -133,14 +132,14 @@ class Router {
               settings: routeSettings,
               fullscreenDialog: transition == TransitionType.nativeModal,
               builder: (BuildContext context) {
-                return handler.handlerFunc(context, parameters);
+                return handler.handlerFunc!(context, parameters);
               });
         } else {
           return MaterialPageRoute<dynamic>(
               settings: routeSettings,
               fullscreenDialog: transition == TransitionType.nativeModal,
               builder: (BuildContext context) {
-                return handler.handlerFunc(context, parameters);
+                return handler.handlerFunc!(context, parameters);
               });
         }
       } else if (transition == TransitionType.material ||
@@ -150,7 +149,7 @@ class Router {
             fullscreenDialog:
                 transition == TransitionType.materialFullScreenDialog,
             builder: (BuildContext context) {
-              return handler.handlerFunc(context, parameters);
+              return handler.handlerFunc!(context, parameters);
             });
       } else if (transition == TransitionType.cupertino ||
           transition == TransitionType.cupertinoFullScreenDialog) {
@@ -159,7 +158,7 @@ class Router {
             fullscreenDialog:
                 transition == TransitionType.cupertinoFullScreenDialog,
             builder: (BuildContext context) {
-              return handler.handlerFunc(context, parameters);
+              return handler.handlerFunc!(context, parameters);
             });
       } else {
         var routeTransitionsBuilder;
@@ -172,7 +171,7 @@ class Router {
           settings: routeSettings,
           pageBuilder: (BuildContext context, Animation<double> animation,
               Animation<double> secondaryAnimation) {
-            return handler.handlerFunc(context, parameters);
+            return handler.handlerFunc!(context, parameters);
           },
           transitionDuration: transitionDuration,
           transitionsBuilder: routeTransitionsBuilder,
@@ -186,7 +185,7 @@ class Router {
   }
 
   RouteTransitionsBuilder _standardTransitionsBuilder(
-      TransitionType transitionType) {
+      TransitionType? transitionType) {
     return (BuildContext context, Animation<double> animation,
         Animation<double> secondaryAnimation, Widget child) {
       if (transitionType == TransitionType.fadeIn) {
@@ -219,9 +218,9 @@ class Router {
   /// Route generation method. This function can be used as a way to create routes on-the-fly
   /// if any defined handler is found. It can also be used with the [MaterialApp.onGenerateRoute]
   /// property as callback to create routes that can be used with the [Navigator] class.
-  Route<dynamic> generator(RouteSettings routeSettings) {
+  Route<dynamic>? generator(RouteSettings routeSettings) {
     RouteMatch match =
-        matchRoute(null, routeSettings.name, routeSettings: routeSettings);
+        matchRoute(null, routeSettings.name!, routeSettings: routeSettings);
     return match.route;
   }
 

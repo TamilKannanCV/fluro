@@ -7,7 +7,7 @@
  * See LICENSE for distribution and usage details.
  */
 import 'package:fluro/fluro.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Router;
 
 import '../../config/application.dart';
 import '../../config/routes.dart';
